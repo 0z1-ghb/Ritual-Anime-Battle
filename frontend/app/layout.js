@@ -4,6 +4,9 @@ import { Providers } from "../lib/providers";
 export const metadata = {
   title: "Anime Battle Arena",
   description: "On-chain anime character battles on Ritual Chain",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
