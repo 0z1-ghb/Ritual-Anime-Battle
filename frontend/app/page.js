@@ -25,6 +25,12 @@ export default function Home() {
   const [playerCharId, setPlayerCharId] = useState(null);
   const [battleError, setBattleError] = useState(null);
   const [lastTxHash, setLastTxHash] = useState(null);
+  const [activeTab, setActiveTab] = useState("characters");
+  const [battleHistory, setBattleHistory] = useState([]);
+  const [playerStats, setPlayerStats] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [leaderboardSubTab, setLeaderboardSubTab] = useState("characters");
+  const [allPlayers, setAllPlayers] = useState([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -52,6 +58,46 @@ export default function Home() {
     fetchCharacters();
   }, [fetchCharacters]);
 
+  const fetchPlayerData = useCallback(async (addr) => {
+    if (!addr) return;
+    setHistoryLoading(true);
+    try {
+      const [stats, history] = await Promise.all([
+        readContract(config, { address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: "getPlayerStats", args: [addr] }),
+        readContract(config, { address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: "getPlayerBattles", args: [addr, 0n, 50n] }),
+      ]);
+      setPlayerStats(stats);
+      setBattleHistory(history);
+    } catch (e) {
+      console.log("Failed to fetch player data", e);
+    }
+    setHistoryLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isConnected && (activeTab === "leaderboard" || activeTab === "history")) {
+      fetchPlayerData(address);
+    }
+  }, [activeTab, isConnected, address, fetchPlayerData]);
+
+  useEffect(() => {
+    if (activeTab === "leaderboard" && leaderboardSubTab === "players") {
+      const fetch = async () => {
+        try {
+          const data = await readContract(config, {
+            address: CONTRACT_ADDRESS,
+            abi: CONTRACT_ABI,
+            functionName: "getAllPlayers",
+          });
+          setAllPlayers(data);
+        } catch (e) {
+          console.log("Failed to fetch all players", e);
+        }
+      };
+      fetch();
+    }
+  }, [activeTab, leaderboardSubTab]);
+
   useEffect(() => {
     if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x" + "0".repeat(40)) return;
     const unwatch = watchContractEvent(config, {
@@ -60,10 +106,11 @@ export default function Home() {
       eventName: "BattleResult",
       onLogs(logs) {
         fetchCharacters();
+        fetchPlayerData(address);
       },
     });
     return () => unwatch();
-  }, []);
+  }, [fetchPlayerData, address]);
 
   const handleBattle = async (charId) => {
     if (!isConnected) return;
@@ -167,7 +214,7 @@ export default function Home() {
           ON-CHAIN BATTLE ARENA
         </p>
       </div>
-      <main className="fixed left-6 bottom-6 w-4/5 max-w-4xl pt-10 p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative" style={{ top: "170px" }}>
+      <main className="fixed left-6 bottom-6 w-4/5 max-w-4xl pt-10 p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh]" style={{ top: "170px" }}>
         {isMounted && isConnected && (
           <button
             onClick={() => disconnect()}
@@ -317,16 +364,266 @@ export default function Home() {
             })()}
           </div>
         ) : (
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-1.5">
-            {characters.map((char) => (
-              <CharacterCard
-                key={char.id.toString()}
-                character={char}
-                onBattle={handleBattle}
-                disabled={pending}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex gap-4 mb-4 border-b border-white/10 pb-2">
+              <button
+                onClick={() => setActiveTab("characters")}
+                className={`text-xs font-semibold tracking-wider transition-colors pb-1 ${
+                  activeTab === "characters"
+                    ? "text-[#22ff88] border-b-2 border-[#22ff88]"
+                    : "text-white/40 hover:text-white/80 border-b-2 border-transparent"
+                }`}
+              >
+                CHARACTERS
+              </button>
+              <button
+                onClick={() => setActiveTab("leaderboard")}
+                className={`text-xs font-semibold tracking-wider transition-colors pb-1 ${
+                  activeTab === "leaderboard"
+                    ? "text-[#22ff88] border-b-2 border-[#22ff88]"
+                    : "text-white/40 hover:text-white/80 border-b-2 border-transparent"
+                }`}
+              >
+                LEADERBOARD
+              </button>
+              <button
+                onClick={() => setActiveTab("history")}
+                className={`text-xs font-semibold tracking-wider transition-colors pb-1 ${
+                  activeTab === "history"
+                    ? "text-[#22ff88] border-b-2 border-[#22ff88]"
+                    : "text-white/40 hover:text-white/80 border-b-2 border-transparent"
+                }`}
+              >
+                HISTORY
+              </button>
+            </div>
+            {activeTab === "characters" ? (
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-1.5">
+                {characters.map((char) => (
+                  <CharacterCard
+                    key={char.id.toString()}
+                    character={char}
+                    onBattle={handleBattle}
+                    disabled={pending}
+                  />
+                ))}
+              </div>
+            ) : activeTab === "leaderboard" ? (
+              <div>
+                {playerStats && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3 text-xs">
+                    <span className="text-gray-400">Your Record</span>
+                    <span className="text-[#22ff88] font-semibold">{Number(playerStats.wins ?? 0)}W</span>
+                    <span className="text-red-400 font-semibold">{Number(playerStats.losses ?? 0)}L</span>
+                    <span className="text-gray-500">|</span>
+                    {(() => {
+                      const total = Number(playerStats.wins) + Number(playerStats.losses);
+                      const pct = total > 0 ? Math.round((Number(playerStats.wins) / total) * 100) : 0;
+                      return (
+                    <span className={total > 0 ? (pct >= 50 ? "text-[#22ff88]" : "text-red-400") : "text-gray-500"}>
+                      {total > 0 ? `${pct}%` : "-"}
+                    </span>
+                      );
+                    })()}
+                  </div>
+                )}
+                <div className="flex gap-3 mb-2 border-b border-white/10 pb-1">
+                  <button
+                    onClick={() => setLeaderboardSubTab("characters")}
+                    className={`text-[11px] font-semibold tracking-wider transition-colors pb-1 ${
+                      leaderboardSubTab === "characters"
+                        ? "text-[#22ff88] border-b-2 border-[#22ff88]"
+                        : "text-white/40 hover:text-white/80 border-b-2 border-transparent"
+                    }`}
+                  >
+                    CHARACTERS
+                  </button>
+                  <button
+                    onClick={() => setLeaderboardSubTab("players")}
+                    className={`text-[11px] font-semibold tracking-wider transition-colors pb-1 ${
+                      leaderboardSubTab === "players"
+                        ? "text-[#22ff88] border-b-2 border-[#22ff88]"
+                        : "text-white/40 hover:text-white/80 border-b-2 border-transparent"
+                    }`}
+                  >
+                    PLAYERS
+                  </button>
+                </div>
+                {leaderboardSubTab === "characters" ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-[#22ff88] border-b border-white/10">
+                        <th className="text-left py-2 pr-2 font-semibold">#</th>
+                        <th className="text-left py-2 pr-2 font-semibold">Character</th>
+                        <th className="text-left py-2 pr-2 font-semibold">Anime</th>
+                        <th className="text-center py-2 pr-2 font-semibold">⚡</th>
+                        <th className="text-center py-2 pr-2 font-semibold">W</th>
+                        <th className="text-center py-2 pr-2 font-semibold">L</th>
+                        <th className="text-center py-2 font-semibold">%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...characters]
+                        .sort((a, b) => Number(b.wins ?? 0) - Number(a.wins ?? 0))
+                        .map((char, i) => {
+                          const w = Number(char.wins ?? 0);
+                          const l = Number(char.losses ?? 0);
+                          const total = w + l;
+                          const pct = total > 0 ? Math.round((w / total) * 100) : 0;
+                          return (
+                            <tr key={char.id.toString()} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                              <td className="py-1.5 pr-2 text-gray-400">{i + 1}</td>
+                              <td className="py-1.5 pr-2 flex items-center gap-1.5">
+                                <img
+                                  src={`/characters/${Number(char.id) + 1}.png`}
+                                  alt={char.name}
+                                  className="w-5 h-5 rounded object-contain bg-gray-800"
+                                  onError={(e) => { e.target.style.display = "none" }}
+                                />
+                                <span className="text-white font-medium truncate max-w-[70px]">{char.name}</span>
+                              </td>
+                              <td className="py-1.5 pr-2 text-white/80 truncate max-w-[110px]">{char.anime}</td>
+                              <td className="text-center py-1.5 pr-2 text-[#22ff88]">{char.power}</td>
+                              <td className="text-center py-1.5 pr-2 text-[#22ff88]">{w}</td>
+                              <td className="text-center py-1.5 pr-2 text-red-400">{l}</td>
+                              <td className={`text-center py-1.5 font-semibold ${total > 0 ? (pct >= 50 ? "text-[#22ff88]" : "text-red-400") : "text-white/60"}`}>{total > 0 ? `${pct}%` : "-"}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                ) : (
+                <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                  {allPlayers.length === 0 ? (
+                    <p className="text-center text-gray-400 text-sm py-8">No players yet</p>
+                  ) : (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-[#22ff88] border-b border-white/10">
+                        <th className="text-left py-2 pr-2 font-semibold">#</th>
+                        <th className="text-left py-2 pr-2 font-semibold">Address</th>
+                        <th className="text-center py-2 pr-2 font-semibold">W</th>
+                        <th className="text-center py-2 pr-2 font-semibold">L</th>
+                        <th className="text-center py-2 font-semibold">%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...allPlayers]
+                        .sort((a, b) => {
+                          const wa = Number(b.wins ?? 0) - Number(a.wins ?? 0);
+                          if (wa !== 0) return wa;
+                          const ta = Number(a.wins) + Number(a.losses);
+                          const tb = Number(b.wins) + Number(b.losses);
+                          return tb - ta;
+                        })
+                        .map((entry, i) => {
+                          const w = Number(entry.wins);
+                          const l = Number(entry.losses);
+                          const total = w + l;
+                          const pct = total > 0 ? Math.round((w / total) * 100) : 0;
+                          const isYou = isConnected && entry.player?.toLowerCase() === address?.toLowerCase();
+                          return (
+                            <tr key={entry.player} className={`${isYou ? "bg-[#22ff88]/10 border-b border-[#22ff88]/30" : "border-b border-white/5 hover:bg-white/5"} transition-colors`}>
+                              <td className="py-1.5 pr-2 text-gray-400">{i + 1}</td>
+                              <td className="py-1.5 pr-2 flex items-center gap-1.5">
+                                <span className={`${isYou ? "text-[#22ff88]" : "text-white"} font-mono text-[11px]`}>
+                                  {entry.player?.substring(0, 6)}...{entry.player?.substring(38)}
+                                </span>
+                                {isYou && <span className="text-[10px] text-[#22ff88] font-semibold">(you)</span>}
+                              </td>
+                              <td className="text-center py-1.5 pr-2 text-[#22ff88]">{w}</td>
+                              <td className="text-center py-1.5 pr-2 text-red-400">{l}</td>
+                              <td className={`text-center py-1.5 font-semibold ${total > 0 ? (pct >= 50 ? "text-[#22ff88]" : "text-red-400") : "text-white/60"}`}>{total > 0 ? `${pct}%` : "-"}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                  )}
+                </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                {!isConnected ? (
+                  <p className="text-center text-gray-400 text-sm py-8">Connect wallet to see your battle history</p>
+                ) : historyLoading ? (
+                  <p className="text-center text-gray-400 text-sm py-8">Loading...</p>
+                ) : battleHistory.length === 0 ? (
+                  <p className="text-center text-gray-400 text-sm py-8">No battles yet. Go fight!</p>
+                ) : (
+                  <div>
+                    {playerStats && (
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3 text-xs">
+                        <span className="text-gray-400">Your Record</span>
+                        <span className="text-[#22ff88] font-semibold">{Number(playerStats.wins ?? 0)}W</span>
+                        <span className="text-red-400 font-semibold">{Number(playerStats.losses ?? 0)}L</span>
+                        <span className="text-gray-500">|</span>
+                        {(() => {
+                          const total = Number(playerStats.wins) + Number(playerStats.losses);
+                          const pct = total > 0 ? Math.round((Number(playerStats.wins) / total) * 100) : 0;
+                          return (
+                        <span className={total > 0 ? (pct >= 50 ? "text-[#22ff88]" : "text-red-400") : "text-gray-500"}>
+                          {total > 0 ? `${pct}%` : "-"}
+                        </span>
+                          );
+                        })()}
+                      </div>
+                    )}
+                    <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-[#22ff88] border-b border-white/10">
+                            <th className="text-left py-2 pr-2 font-semibold">#</th>
+                            <th className="text-left py-2 pr-2 font-semibold">You</th>
+                            <th className="text-left py-2 pr-2 font-semibold">Opponent</th>
+                            <th className="text-center py-2 font-semibold">Result</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...battleHistory].reverse().map((rec, i) => {
+                            const pChar = characters.find((c) => Number(c.id) === Number(rec.playerCharId));
+                            const oChar = characters.find((c) => Number(c.id) === Number(rec.opponentCharId));
+                            const won = Number(rec.winnerId) === Number(rec.playerCharId);
+                            return (
+                              <tr key={rec.id?.toString() || i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                <td className="py-1.5 pr-2 text-gray-400">{Number(rec.id)}</td>
+                                <td className="py-1.5 pr-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <img src={`/characters/${Number(rec.playerCharId) + 1}.png`} alt="" className="w-5 h-5 rounded object-contain bg-gray-800 shrink-0" onError={(e) => { e.target.style.display = "none" }} />
+                                    <div className="min-w-0">
+                                      <div className="text-white text-[11px] leading-tight truncate max-w-[60px]">{pChar?.name || "?"}</div>
+                                      <div className="text-white/50 text-[9px] leading-tight truncate max-w-[60px]">{pChar?.anime || ""}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-1.5 pr-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <img src={`/characters/${Number(rec.opponentCharId) + 1}.png`} alt="" className="w-5 h-5 rounded object-contain bg-gray-800 shrink-0" onError={(e) => { e.target.style.display = "none" }} />
+                                    <div className="min-w-0">
+                                      <div className="text-white text-[11px] leading-tight truncate max-w-[60px]">{oChar?.name || "?"}</div>
+                                      <div className="text-white/50 text-[9px] leading-tight truncate max-w-[60px]">{oChar?.anime || ""}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="text-center py-1.5">
+                                  <div className={`font-bold text-[13px] ${won ? "text-[#22ff88]" : "text-red-400"}`}>
+                                    {won ? "WIN" : "LOSS"}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

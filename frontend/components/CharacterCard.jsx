@@ -57,6 +57,14 @@ export default function CharacterCard({ character, onBattle, disabled }) {
         </div>
         <span className="text-[8px] text-[#22ff88] font-mono">{character.power}</span>
       </div>
+      <div className="flex items-center justify-between mt-0.5">
+        <span className="text-[8px] text-[#22ff88] font-semibold">
+          W:{String(character.wins ?? 0)}
+        </span>
+        <span className="text-[8px] text-red-400 font-semibold">
+          L:{String(character.losses ?? 0)}
+        </span>
+      </div>
       <button
         onClick={() => onBattle(Number(character.id))}
         disabled={disabled}

@@ -8,9 +8,37 @@ contract AnimeArena {
     uint256 public battleCount;
     uint256 public nonce;
 
+    struct BattleRecord {
+        uint256 id;
+        address player;
+        uint256 playerCharId;
+        uint256 opponentCharId;
+        uint256 winnerId;
+        uint256 loserId;
+        uint256 timestamp;
+    }
+
+    struct PlayerStats {
+        uint256 wins;
+        uint256 losses;
+    }
+
+    struct PlayerLeaderboardEntry {
+        address player;
+        uint256 wins;
+        uint256 losses;
+    }
+
+    BattleRecord[] public battleHistory;
+    mapping(address => uint256[]) public playerBattleIds;
+    mapping(address => PlayerStats) public players;
+    address[] public allPlayers;
+    mapping(address => bool) public isPlayer;
+
     event CharacterAdded(uint256 indexed id, string name, string anime, string imageCid, uint8 power);
     event BattleResult(
         uint256 indexed battleId,
+        address indexed player,
         uint256 winnerId,
         uint256 loserId,
         string winnerName,
@@ -78,6 +106,11 @@ contract AnimeArena {
         require(playerCharacterId < characters.length, "Invalid character");
         require(characters.length >= 2, "Not enough characters");
 
+        if (!isPlayer[msg.sender]) {
+            allPlayers.push(msg.sender);
+            isPlayer[msg.sender] = true;
+        }
+
         uint256 opponentId = _randomOpponent(playerCharacterId);
 
         Character storage player = characters[playerCharacterId];
@@ -88,15 +121,51 @@ contract AnimeArena {
         if (wId == playerCharacterId) {
             player.wins++;
             opponent.losses++;
+            players[msg.sender].wins++;
         } else {
             opponent.wins++;
             player.losses++;
+            players[msg.sender].losses++;
         }
 
         battleCount++;
-        emit BattleResult(battleCount, wId, lId, characters[wId].name, characters[lId].name, block.timestamp);
+        battleHistory.push(BattleRecord(battleCount, msg.sender, playerCharacterId, opponentId, wId, lId, block.timestamp));
+        playerBattleIds[msg.sender].push(battleHistory.length - 1);
+
+        emit BattleResult(battleCount, msg.sender, wId, lId, characters[wId].name, characters[lId].name, block.timestamp);
 
         return (wId, lId);
+    }
+
+    function getPlayerBattles(address player, uint256 offset, uint256 limit) external view returns (BattleRecord[] memory) {
+        uint256[] storage ids = playerBattleIds[player];
+        uint256 total = ids.length;
+        if (offset >= total) return new BattleRecord[](0);
+        uint256 end = offset + limit > total ? total : offset + limit;
+        uint256 count = end - offset;
+        BattleRecord[] memory result = new BattleRecord[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = battleHistory[ids[offset + i]];
+        }
+        return result;
+    }
+
+    function getPlayerBattleCount(address player) external view returns (uint256) {
+        return playerBattleIds[player].length;
+    }
+
+    function getPlayerStats(address player) external view returns (PlayerStats memory) {
+        return players[player];
+    }
+
+    function getAllPlayers() external view returns (PlayerLeaderboardEntry[] memory) {
+        uint256 count = allPlayers.length;
+        PlayerLeaderboardEntry[] memory entries = new PlayerLeaderboardEntry[](count);
+        for (uint256 i = 0; i < count; i++) {
+            address p = allPlayers[i];
+            entries[i] = PlayerLeaderboardEntry(p, players[p].wins, players[p].losses);
+        }
+        return entries;
     }
 
     function _randomOpponent(uint256 playerId) internal returns (uint256) {

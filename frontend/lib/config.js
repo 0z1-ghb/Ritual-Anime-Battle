@@ -10,7 +10,7 @@ export const RITUAL_CHAIN = {
   },
 };
 
-export const CONTRACT_ADDRESS = "0x052A4a9C928bBB1C1CAd7894e8D71ee4E8Af5660";
+export const CONTRACT_ADDRESS = "0x69146AFCC43A86F4fd978eE76c7e22a49A45781a";
 
 export const CONTRACT_ABI = [
   {
@@ -26,6 +26,12 @@ export const CONTRACT_ABI = [
         "internalType": "uint256",
         "name": "battleId",
         "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
       },
       {
         "indexed": false,
@@ -129,6 +135,55 @@ export const CONTRACT_ABI = [
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "battleHistory",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "playerCharId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "opponentCharId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "winnerId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "loserId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
         "type": "uint256"
       }
     ],
@@ -305,11 +360,193 @@ export const CONTRACT_ABI = [
   },
   {
     "inputs": [],
+    "name": "getAllPlayers",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "player", "type": "address" },
+          { "internalType": "uint256", "name": "wins", "type": "uint256" },
+          { "internalType": "uint256", "name": "losses", "type": "uint256" }
+        ],
+        "internalType": "struct AnimeArena.PlayerLeaderboardEntry[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "getPlayerBattleCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPlayerBattles",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "playerCharId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "opponentCharId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "winnerId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "loserId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct AnimeArena.BattleRecord[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "getPlayerStats",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "wins",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "losses",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct AnimeArena.PlayerStats",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "nonce",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "playerBattleIds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "players",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "wins",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "losses",
         "type": "uint256"
       }
     ],
