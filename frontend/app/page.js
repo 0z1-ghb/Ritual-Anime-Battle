@@ -214,7 +214,7 @@ export default function Home() {
           ON-CHAIN BATTLE ARENA
         </p>
       </div>
-      <main className="fixed left-2 right-2 md:left-6 md:w-4/5 max-w-4xl pt-6 md:pt-10 p-3 md:p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh]" style={{ top: "90px" }}>
+      <main className="fixed left-2 right-2 md:left-6 md:w-4/5 max-w-4xl pt-6 md:pt-10 p-3 md:p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh] top-[90px] lg:top-[170px]">
         {isMounted && isConnected && (
           <button
             onClick={() => disconnect()}
