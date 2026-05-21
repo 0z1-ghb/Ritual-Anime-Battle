@@ -193,8 +193,8 @@ export default function Home() {
           backgroundAttachment: "fixed",
         }}
       >
-      <div className="fixed left-6 text-center" style={{ zIndex: 20, top: "24px" }}>
-        <h1 className="text-8xl tracking-wide" style={{
+      <div className="fixed left-4 md:left-6 text-center" style={{ zIndex: 20, top: "24px" }}>
+        <h1 className="text-4xl md:text-6xl lg:text-8xl tracking-wide" style={{
           fontFamily: "AngillaTattoo, serif",
           color: "#22ff88",
           textShadow: "0 0 10px rgba(34,255,136,0.6), 0 0 40px rgba(34,255,136,0.3)",
@@ -204,7 +204,7 @@ export default function Home() {
         }}>
           Anime Battle Arena
         </h1>
-        <p className="text-3xl tracking-widest" style={{
+        <p className="text-lg md:text-xl lg:text-3xl tracking-widest" style={{
           fontFamily: "AngillaTattoo, serif",
           color: "#ffffff",
           opacity: isLoading ? 0 : 0.8,
@@ -214,7 +214,7 @@ export default function Home() {
           ON-CHAIN BATTLE ARENA
         </p>
       </div>
-      <main className="fixed left-6 bottom-6 w-4/5 max-w-4xl pt-10 p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh]" style={{ top: "170px" }}>
+      <main className="fixed left-2 right-2 md:left-6 md:w-4/5 max-w-4xl pt-6 md:pt-10 p-3 md:p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh]" style={{ top: "90px" }}>
         {isMounted && isConnected && (
           <button
             onClick={() => disconnect()}
@@ -230,7 +230,7 @@ export default function Home() {
           </div>
         ) : !isConnected ? (
           <div className="py-6 text-center">
-            <p className="text-white/90 mb-5 text-xl font-semibold tracking-wide text-center" style={{ fontFamily: "AngillaTattoo, serif" }}>
+            <p className="text-white/90 mb-5 text-sm md:text-base lg:text-xl font-semibold tracking-wide text-center" style={{ fontFamily: "AngillaTattoo, serif" }}>
               battle your favorite anime characters on-chain
             </p>
             <button
@@ -628,7 +628,7 @@ export default function Home() {
       </main>
     </div>
     <div className="fixed bottom-4 left-0 right-0 text-center z-30">
-      <p className="text-lg tracking-[0.15em] text-white/90" style={{ fontFamily: "AngillaTattoo, serif" }}>
+      <p className="text-xs md:text-base lg:text-lg tracking-[0.15em] text-white/90" style={{ fontFamily: "AngillaTattoo, serif" }}>
         <a href="https://github.com/0z1-ghb" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
         <span className="mx-3 text-white/30">/</span>
         <a href="https://docs.ritualfoundation.org/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Doc</a>
