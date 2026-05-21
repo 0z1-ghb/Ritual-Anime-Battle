@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { parseGwei } from "viem";
 import { decodeEventLog } from "viem";
-import { injected } from "wagmi/connectors";
 import { readContract, writeContract, watchContractEvent, waitForTransactionReceipt } from "wagmi/actions";
 import { config } from "../lib/useWagmiConfig";
 import { CONTRACT_ADDRESS, CONTRACT_ABI, RITUAL_CHAIN } from "../lib/config";
@@ -13,7 +12,7 @@ import Leaves from "../components/Leaves";
 
 export default function Home() {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -234,7 +233,7 @@ export default function Home() {
               battle your favorite anime characters on-chain
             </p>
             <button
-              onClick={() => connect({ connector: injected() })}
+              onClick={() => connect({ connector: connectors[0] })}
               className="w-auto px-4 py-1.5 font-bold text-xs text-[#22ff88] border border-[#22ff88] bg-transparent hover:bg-[#22ff88] hover:text-black rounded-lg transition-colors"
             >
               Connect Wallet
