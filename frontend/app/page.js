@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { parseGwei } from "viem";
 import { decodeEventLog } from "viem";
 import { readContract, writeContract, watchContractEvent, waitForTransactionReceipt } from "wagmi/actions";
@@ -12,8 +12,7 @@ import Leaves from "../components/Leaves";
 
 export default function Home() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { connectors } = useConnect();
   const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [characters, setCharacters] = useState([]);
@@ -216,7 +215,7 @@ export default function Home() {
       <main className="fixed left-2 right-2 md:left-6 md:w-4/5 max-w-4xl pt-6 md:pt-10 p-3 md:p-6 overflow-y-auto backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl hide-scrollbar relative max-h-[68vh] top-[90px] lg:top-[170px]">
         {isMounted && isConnected && (
           <button
-            onClick={() => disconnect()}
+            onClick={() => connectors[0]?.disconnect?.()}
             className="absolute top-3 right-3 px-3 py-1 text-xs font-semibold text-[#22ff88] border border-[#22ff88] bg-transparent hover:bg-[#22ff88] hover:text-black rounded transition-colors"
           >
             Disconnect
@@ -233,7 +232,7 @@ export default function Home() {
               battle your favorite anime characters on-chain
             </p>
             <button
-              onClick={() => connect({ connector: connectors[0] })}
+              onClick={() => connectors[0]?.connect?.()}
               className="w-auto px-4 py-1.5 font-bold text-xs text-[#22ff88] border border-[#22ff88] bg-transparent hover:bg-[#22ff88] hover:text-black rounded-lg transition-colors"
             >
               Connect Wallet
