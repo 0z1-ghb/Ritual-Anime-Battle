@@ -10,7 +10,7 @@ export const RITUAL_CHAIN = {
   },
 };
 
-export const CONTRACT_ADDRESS = "0x69146AFCC43A86F4fd978eE76c7e22a49A45781a";
+export const CONTRACT_ADDRESS = "0xDaC66F54B549Aeb153E25e10a21CfD34DC944814";
 
 export const CONTRACT_ABI = [
   {
